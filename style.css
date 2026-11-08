@@ -1,0 +1,861 @@
+/* ===== COLOURS =====
+   Defined once here as "variables" so they're easy to change later. */
+:root {
+  --green: #0f3d2e;
+  --green-light: #1b5e46;
+  --red: #c8102e;
+  --gold: #f2c14e;
+  --cream: #fdf6e3;
+  --grey: #8a9a92;
+
+  /* The Christmas font for headings. If it can't load (no signal),
+     the phone uses its own fancy "cursive" font instead. */
+  --font-festive: "Mountains of Christmas", cursive;
+}
+
+/* Headings use the Christmas font */
+h1,
+#current-pub,
+h3,
+.result-text {
+  font-family: var(--font-festive);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* Make sizing predictable: padding is included inside an element's width */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--green);
+  color: var(--cream);
+  padding-bottom: 80px;   /* room so the tab bar doesn't cover the bottom of the page */
+}
+
+/* ===== HEADER ===== */
+header {
+  position: relative;   /* so the snow can be placed inside it */
+  overflow: hidden;     /* snow disappears at the bottom edge */
+  background: var(--red);
+  /* Extra space at the top when it's opened as a home-screen app on an
+     iPhone, so the title isn't hidden under the clock and battery. */
+  padding: calc(20px + env(safe-area-inset-top)) 16px 20px;
+  text-align: center;
+}
+
+/* Keep the header's text and bar in front of the snow */
+header h1,
+header p,
+header .progress-bar {
+  position: relative;
+  z-index: 1;
+}
+
+h1 {
+  margin: 0 0 6px;
+  font-size: 2.1rem;
+  line-height: 1.1;
+}
+
+/* ===== SNOW =====
+   app.js adds lots of little white dots into .snow. Each one falls with
+   its own speed, size and sideways drift (--drift). */
+.snow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.flake {
+  position: absolute;
+  top: -10px;
+  border-radius: 50%;
+  background: white;
+  animation: snowfall linear infinite;
+}
+
+@keyframes snowfall {
+  to { transform: translate(var(--drift), 200px); }
+}
+
+#progress-text {
+  margin: 0 0 10px;
+}
+
+.progress-bar {
+  max-width: 440px;   /* same width as the page content, not the whole screen */
+  margin: 0 auto;
+  height: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+#progress-fill {
+  height: 100%;
+  width: 0%;               /* JavaScript changes this */
+  background: var(--gold);
+  transition: width 0.4s;  /* smooth growing animation */
+}
+
+/* ===== MAIN AREA ===== */
+main {
+  max-width: 480px;  /* stops it getting too wide on a laptop */
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* ===== CURRENT PUB CARD ===== */
+.current-card {
+  background: var(--green-light);
+  border: 2px solid var(--gold);
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.label {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 0.8rem;
+  color: var(--gold);
+}
+
+#current-pub {
+  font-size: 2.4rem;
+  margin: 8px 0 20px;
+}
+
+/* ===== TIMER ===== */
+.timer {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.timer-display {
+  font-size: 3rem;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;  /* stops the digits jiggling as they change */
+}
+
+.timer-message {
+  margin: 0;
+  color: var(--gold);
+}
+
+.timer .small-button {
+  margin-top: 8px;
+}
+
+/* When time runs out: red background that pulses */
+.timer.times-up {
+  background: var(--red);
+  animation: pulse 1s infinite alternate;
+}
+
+.timer.times-up .timer-message {
+  color: white;
+  font-weight: bold;
+}
+
+@keyframes pulse {
+  from { transform: scale(1); }
+  to   { transform: scale(1.04); }
+}
+
+/* ===== RULE CARD (the flip) =====
+   How it works: the front and back sit in the same spot. The back starts
+   already turned around (rotateY 180deg), and "backface-visibility: hidden"
+   means you can't see a face from behind. Turning the whole card 180deg
+   hides the front and shows the back. */
+.rule-card {
+  perspective: 800px;   /* gives the spin a 3D look */
+  height: 170px;
+  margin-bottom: 16px;
+  cursor: pointer;
+}
+
+.rule-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.rule-card.flipped .rule-inner {
+  transform: rotateY(180deg);
+}
+
+.rule-front,
+.rule-back {
+  position: absolute;
+  inset: 0;   /* fill the whole card */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  border-radius: 12px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;   /* needed for Safari / iPhone */
+}
+
+.rule-front {
+  background: repeating-linear-gradient(45deg, var(--red), var(--red) 14px, #a50d26 14px, #a50d26 28px);
+  font-size: 1.2rem;
+  font-weight: bold;
+  line-height: 1.6;
+}
+
+.rule-back {
+  background: var(--cream);
+  color: var(--green);
+  transform: rotateY(180deg);
+}
+
+.rule-back .label {
+  color: var(--red);
+}
+
+#rule-text {
+  font-size: 1.3rem;
+  font-weight: bold;
+  margin: 6px 0 10px;
+}
+
+/* ===== DIRECTIONS BUTTON ===== */
+.map-button {
+  display: block;
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 12px;
+  background: transparent;
+  border: 2px solid var(--gold);
+  border-radius: 12px;
+  color: var(--gold);
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* ===== TAB BAR ===== */
+.tab-bar {
+  position: fixed;   /* stays put at the bottom while the page scrolls */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  background: var(--red);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+  padding-bottom: env(safe-area-inset-bottom);   /* clears the iPhone home bar */
+  z-index: 10;
+}
+
+.tab-button {
+  flex: 1;   /* three buttons share the width equally */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 0 10px;
+  background: none;
+  border: none;
+  color: var(--cream);
+  font-size: 1.4rem;
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+.tab-button span {
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+/* The tab you're on */
+.tab-button.active {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* ===== MAP TAB ===== */
+.map-modes {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.mode-button {
+  flex: 1;
+  padding: 10px;
+  border: 2px solid var(--gold);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--gold);
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.mode-button.active {
+  background: var(--gold);
+  color: var(--green);
+}
+
+.map-frame {
+  width: 100%;
+  height: 340px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--green-light);   /* shows while the map loads */
+}
+
+.small-link {
+  display: block;
+  text-align: center;
+  margin-top: 10px;
+  color: var(--gold);
+}
+
+.hint {
+  margin: -8px 0 12px;
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+/* ===== BUTTONS ===== */
+.big-button {
+  width: 100%;
+  padding: 16px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 12px;
+  background: var(--red);
+  color: white;
+  cursor: pointer;
+}
+
+.big-button:active {
+  transform: scale(0.97);  /* little "press" effect */
+}
+
+.big-button:disabled {
+  background: var(--grey);
+}
+
+.small-button {
+  display: block;
+  margin: 12px auto 0;
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid var(--grey);
+  border-radius: 8px;
+  color: var(--cream);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+/* ===== PUNISHMENT WHEEL ===== */
+.wheel-section {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.wheel-wrap {
+  position: relative;
+  width: 300px;   /* if you change this, change WHEEL_SIZE in app.js too */
+  max-width: 100%;
+  aspect-ratio: 1;   /* always a perfect square, so the wheel stays round */
+  margin: 0 auto 16px;
+}
+
+/* The triangle at the top, made from borders (a classic CSS trick) */
+.wheel-pointer {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  margin-left: -14px;
+  border-left: 14px solid transparent;
+  border-right: 14px solid transparent;
+  border-top: 30px solid var(--cream);
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5));
+  transform-origin: 50% 0;   /* flicks from its top, like it's on a hinge */
+  z-index: 4;   /* sit on top of everything */
+}
+
+/* Each time a peg passes, JavaScript adds "tick" and the pointer flicks */
+.wheel-pointer.tick {
+  animation: flick 0.12s ease-out;
+}
+
+@keyframes flick {
+  0%   { transform: rotate(0deg); }
+  30%  { transform: rotate(-22deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.wheel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 6px solid var(--gold);
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  will-change: transform;   /* hint to the browser: this spins, keep it smooth */
+}
+
+/* A soft dark edge on top of the slices, so the wheel looks less flat */
+.wheel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, transparent 55%, rgba(0, 0, 0, 0.3));
+  pointer-events: none;
+}
+
+/* The ring of lights sits over the gold rim */
+.wheel-lights {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Each light sits in its own full-size "holder" that's turned to the
+   light's angle. The light sits at the top of its holder, on the rim. */
+.light-holder {
+  position: absolute;
+  inset: 0;
+}
+
+.light {
+  position: absolute;
+  top: 3px;    /* the middle of the 6px gold rim */
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  margin: -4px;   /* centre it on its spot */
+  border-radius: 50%;
+  background: #fff6c7;
+  box-shadow: 0 0 6px 2px #ffd54a;
+  animation: blink 1.2s infinite alternate;   /* slow twinkle while waiting */
+}
+
+.light.odd {
+  animation-delay: 0.6s;
+}
+
+/* While spinning, the lights blink much faster */
+.wheel-wrap.spinning .light {
+  animation-duration: 0.25s;
+}
+
+.wheel-wrap.spinning .light.odd {
+  animation-delay: 0.125s;
+}
+
+@keyframes blink {
+  from { opacity: 1; }
+  to   { opacity: 0.25; }
+}
+
+/* The cap in the middle */
+.wheel-hub {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 48px;
+  height: 48px;
+  transform: translate(-50%, -50%);   /* centre it exactly */
+  border-radius: 50%;
+  background: var(--cream);
+  border: 4px solid var(--gold);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  z-index: 3;
+}
+
+/* The Spin button glows when it's ready to press */
+.spin-button:not(:disabled) {
+  animation: glow 1.4s infinite alternate;
+}
+
+@keyframes glow {
+  from { box-shadow: 0 0 0 rgba(242, 193, 78, 0); }
+  to   { box-shadow: 0 0 18px rgba(242, 193, 78, 0.8); }
+}
+
+/* ===== PUNISH TAB HEADER + PICKER ===== */
+/* Heading centred like the rest of the tab, sound button pinned to the right */
+.punish-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.punish-header .icon-button {
+  position: absolute;
+  right: 0;
+}
+
+.icon-button {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.25);
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+/* A row of faces you can swipe sideways if there are lots */
+.picker {
+  display: flex;
+  justify-content: safe center;   /* centred, but scrolls properly if there are lots */
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 2px 12px;
+  margin-bottom: 8px;
+}
+
+.picker-chip {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  background: none;
+  border: none;
+  border-radius: 12px;
+  color: var(--cream);
+  font-size: 0.75rem;
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+.picker-chip.selected {
+  opacity: 1;
+  background: rgba(242, 193, 78, 0.2);
+}
+
+.picker-chip.selected .avatar {
+  box-shadow: 0 0 0 3px var(--gold);
+}
+
+/* ===== AVATARS (round photo or initials) ===== */
+.avatar {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 2px solid var(--gold);
+  overflow: hidden;   /* crops the photo into a circle */
+  color: white;
+  font-weight: bold;
+}
+
+/* The photo covers the initials. If there's no photo, the initials show. */
+.avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;   /* fill the circle without stretching */
+}
+
+.avatar.small  { width: 48px;  height: 48px;  font-size: 0.9rem; }
+.avatar.medium { width: 60px;  height: 60px;  font-size: 1.2rem; }
+.avatar.large  { width: 120px; height: 120px; font-size: 2.4rem; border-width: 4px; margin: 0 auto; }
+
+/* ===== CREW TAB ===== */
+.shame-text {
+  margin-top: -8px;
+}
+
+.crew-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.crew-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Top of the hall of shame gets the red-and-gold treatment */
+.crew-card.leader {
+  background: linear-gradient(135deg, var(--red), #8e0c21);
+  border: 2px solid var(--gold);
+}
+
+.crew-rank {
+  width: 26px;
+  text-align: center;
+  font-weight: bold;
+  color: var(--gold);
+}
+
+.crew-info {
+  flex: 1;
+  min-width: 0;   /* lets long text wrap instead of pushing things off screen */
+  display: flex;
+  flex-direction: column;
+}
+
+.crew-name {
+  font-weight: bold;
+  font-size: 1.05rem;
+}
+
+.crew-nickname {
+  font-style: italic;
+  color: var(--gold);
+}
+
+.crew-summary {
+  margin-top: 2px;
+  opacity: 0.8;
+}
+
+.crew-count {
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.crew-count small {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: normal;
+  opacity: 0.8;
+}
+
+/* ===== RESULT POP-UP ===== */
+.overlay {
+  position: fixed;
+  inset: 0;   /* cover the whole screen */
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.75);
+  overflow: hidden;
+}
+
+/* "hidden" normally just works, but display:flex above would override it */
+.overlay[hidden] {
+  display: none;
+}
+
+.result-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 340px;
+  padding: 24px;
+  text-align: center;
+  background: var(--cream);
+  color: var(--green);
+  border: 4px solid var(--gold);
+  border-radius: 20px;
+  animation: pop 0.45s cubic-bezier(0.2, 1.6, 0.4, 1);   /* overshoots a bit: "boing" */
+}
+
+@keyframes pop {
+  from { transform: scale(0.5); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.result-name {
+  margin: 12px 0 4px;
+  font-weight: bold;
+}
+
+.result-text {
+  margin: 0 0 20px;
+  font-size: 2rem;
+  color: var(--red);
+}
+
+/* Falling emoji confetti */
+.confetti {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;   /* taps go straight through to the Done button */
+}
+
+.confetti span {
+  position: absolute;
+  top: -40px;
+  animation-name: fall;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@keyframes fall {
+  to { transform: translateY(110vh) rotate(540deg); }
+}
+
+/* Each label is a thin strip from the edge to the centre, turned to
+   point at its slice. The text runs down the strip. */
+.wheel-label {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2em;
+  margin-left: -1em;
+  height: 50%;
+  padding-top: 16px;     /* keeps text clear of the lights on the rim */
+  padding-bottom: 30px;  /* ...and clear of the cap in the middle */
+  overflow: hidden;      /* never let text run under the cap */
+  transform-origin: bottom center;   /* spin around the wheel's centre */
+  display: flex;
+  justify-content: center;
+}
+
+.wheel-label span {
+  writing-mode: vertical-rl;
+  white-space: nowrap;
+  /* font-size is set by app.js, so long labels shrink to fit */
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+.spin-result {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: var(--gold);
+  min-height: 1.5em;   /* keeps space so the page doesn't jump */
+}
+
+/* ===== THE ROUTE LIST ===== */
+h3 {
+  color: var(--gold);
+  font-size: 1.6rem;
+}
+
+#pub-list {
+  padding-left: 0;
+  list-style: none;   /* we draw our own numbers */
+  margin: 0;
+}
+
+#pub-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  margin-bottom: 6px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;   /* rows are tappable: they show the pub on the map */
+}
+
+/* The pub currently shown on the map gets an outline */
+#pub-list li.selected {
+  outline: 2px solid var(--cream);
+}
+
+/* The little numbered circle at the start of each row */
+.pub-number {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+  border-radius: 50%;
+  text-align: center;
+  font-weight: bold;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Name + rule stacked, taking up the spare space in the row */
+.pub-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.pub-rule {
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+/* Map pin on the right of each row */
+.map-pin {
+  font-size: 1.3rem;
+  padding: 4px;
+}
+
+/* Pubs already finished: faded, with the name struck through */
+#pub-list li.done {
+  opacity: 0.5;
+}
+
+#pub-list li.done .pub-name {
+  text-decoration: line-through;
+}
+
+#pub-list li.done .pub-number {
+  background: var(--green-light);
+}
+
+/* The pub you're in right now: highlighted */
+#pub-list li.current {
+  background: var(--gold);
+  color: var(--green);
+  font-weight: bold;
+}
+
+#pub-list li.current .pub-number {
+  background: var(--red);
+  color: white;
+}
+
+/* ===== SHARED SERVER BADGE (in the header) ===== */
+.sync-status {
+  position: relative;
+  z-index: 1;               /* above the snow */
+  display: inline-block;
+  margin: 10px 0 0;
+  padding: 3px 10px;
+  border-radius: 999px;     /* fully rounded "pill" shape */
+  background: rgba(0, 0, 0, 0.25);
+  font-size: 12px;
+}
+
+/* Empty until sync.js says something, so don't show a blank pill */
+.sync-status:empty {
+  display: none;
+}
+
+/* data-state="..." is set by setStatus() in app.js */
+.sync-status[data-state="live"] {
+  background: var(--green);
+}

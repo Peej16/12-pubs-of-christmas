@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- These two lines make the page display properly on phones -->
+  <meta charset="UTF-8">
+  <!-- viewport-fit=cover lets the app use the whole screen on iPhones with a notch -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+  <title>12 Pubs of Christmas</title>
+
+  <!-- ===== HOME-SCREEN APP SETTINGS =====
+       These make "Add to Home Screen" give you a proper app icon that
+       opens full-screen, without the browser's address bar. -->
+  <link rel="manifest" href="manifest.json">                      <!-- name, icon, colours (Android) -->
+  <link rel="icon" href="icons/icon-192.png">                      <!-- the little icon in the browser tab -->
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">  <!-- the iPhone home-screen icon -->
+  <meta name="theme-color" content="#c8102e">                      <!-- colours the phone's top bar red -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="12 Pubs">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- ===== CHRISTMAS FONT from Google Fonts ===== -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&display=swap" rel="stylesheet">
+
+  <!-- Link to our stylesheet (all the colours, sizes and layout live there) -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ===== HEADER ===== -->
+  <header>
+    <h1>🎄 12 Pubs of Christmas</h1>
+    <!-- JavaScript fills in this text, e.g. "3 of 12 done" -->
+    <p id="progress-text"></p>
+    <!-- A simple progress bar: the inner bar's width grows as you go -->
+    <div class="progress-bar">
+      <div id="progress-fill"></div>
+    </div>
+    <!-- Shows whether this phone is connected to the rest of the crew -->
+    <p id="sync-status" class="sync-status"></p>
+  </header>
+
+  <main>
+    <!-- Each tab's content is its own <section>. JavaScript shows one
+         and hides the others when you tap the tab bar at the bottom. -->
+
+    <!-- ===== TAB 1: PUB ===== -->
+    <section id="tab-pub" class="tab-panel">
+      <div class="current-card">
+        <p class="label" id="current-label">Current pub</p>
+        <h2 id="current-pub"></h2>
+
+        <!-- TIMER: JavaScript updates the numbers every second -->
+        <div id="timer-box" class="timer">
+          <div id="timer-display" class="timer-display">30:00</div>
+          <p id="timer-message" class="timer-message"></p>
+          <button id="timer-button" class="small-button">▶ Start the 30-minute timer</button>
+        </div>
+
+        <!-- RULE CARD: two faces stacked on top of each other.
+             Adding the class "flipped" spins it round to show the back. -->
+        <div id="rule-card" class="rule-card">
+          <div class="rule-inner">
+            <div class="rule-front">🎁<br>Tap to reveal this pub's rule</div>
+            <div class="rule-back">
+              <p class="label">The rule</p>
+              <p id="rule-text"></p>
+              <small>Break it? Spin the wheel in the Punish tab 🎡</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Jumps to the Map tab with directions to this pub -->
+        <button id="map-button" class="map-button">📍 Directions</button>
+
+        <button id="next-button" class="big-button">Next pub ➜</button>
+        <button id="back-button" class="small-button">↩ Back one</button>
+      </div>
+
+      <button id="reset-button" class="small-button">Start the night again</button>
+    </section>
+
+    <!-- ===== TAB 2: MAP ===== -->
+    <section id="tab-map" class="tab-panel" hidden>
+      <h3 id="map-title"></h3>
+
+      <!-- Two ways to view the map -->
+      <div class="map-modes">
+        <button id="mode-place" class="mode-button">📍 Location</button>
+        <button id="mode-walk" class="mode-button">🚶 Walk</button>
+      </div>
+
+      <!-- An <iframe> is a window that shows another web page inside ours.
+           Here it shows a Google map. JavaScript sets which map. -->
+      <iframe id="map-frame" class="map-frame" title="Map" loading="lazy"></iframe>
+      <a id="map-open-link" class="small-link" target="_blank" rel="noopener">Open in Google Maps ↗</a>
+
+      <h3>The route</h3>
+      <p class="hint">Tap a pub to see it on the map</p>
+      <!-- An empty ordered list. JavaScript adds the 12 pubs into it. -->
+      <ol id="pub-list"></ol>
+    </section>
+
+    <!-- ===== TAB 3: PUNISH ===== -->
+    <section id="tab-punish" class="tab-panel wheel-section" hidden>
+      <div class="punish-header">
+        <h3>Caught breaking a rule?</h3>
+        <button id="sound-button" class="icon-button" aria-label="Sound on or off">🔊</button>
+      </div>
+
+      <!-- Row of faces: tap who got caught. JavaScript fills it in. -->
+      <p class="hint">Who got caught?</p>
+      <div id="picker" class="picker"></div>
+
+      <div id="wheel-wrap" class="wheel-wrap">
+        <!-- The pointer is a little triangle that sits above the wheel -->
+        <div class="wheel-pointer"></div>
+        <!-- JavaScript colours the wheel and adds the labels -->
+        <div id="wheel" class="wheel"></div>
+        <!-- Ring of little lights around the edge (added by JavaScript) -->
+        <div id="wheel-lights" class="wheel-lights"></div>
+        <!-- The cap in the middle of the wheel -->
+        <div class="wheel-hub">🎄</div>
+      </div>
+
+      <button id="spin-button" class="big-button spin-button">👆 Pick who got caught</button>
+      <p id="spin-result" class="spin-result"></p>
+    </section>
+
+    <!-- ===== TAB 4: CREW ===== -->
+    <section id="tab-crew" class="tab-panel" hidden>
+      <h3>🏆 Hall of shame</h3>
+      <p id="shame-text" class="shame-text"></p>
+      <!-- One row per person, most punished at the top -->
+      <ol id="crew-list" class="crew-list"></ol>
+      <button id="undo-button" class="small-button" hidden>↩ Undo last punishment</button>
+    </section>
+  </main>
+
+  <!-- ===== RESULT POP-UP =====
+       Covers the screen after a spin. "hidden" until JavaScript shows it. -->
+  <div id="result-overlay" class="overlay" hidden>
+    <div class="result-card">
+      <div id="result-avatar"></div>
+      <p id="result-name" class="result-name"></p>
+      <p id="result-text" class="result-text"></p>
+      <button id="result-close" class="big-button">Done</button>
+    </div>
+    <!-- Falling emoji get added in here -->
+    <div id="confetti" class="confetti"></div>
+  </div>
+
+  <!-- ===== TAB BAR (stuck to the bottom of the screen) =====
+       data-tab="..." says which section each button opens -->
+  <nav class="tab-bar">
+    <button class="tab-button" data-tab="pub">🍺<span>Pub</span></button>
+    <button class="tab-button" data-tab="map">🗺️<span>Map</span></button>
+    <button class="tab-button" data-tab="punish">🎡<span>Punish</span></button>
+    <button class="tab-button" data-tab="crew">👥<span>Crew</span></button>
+  </nav>
+
+  <!-- Load our JavaScript last, so the HTML above already exists when it runs -->
+  <script src="app.js"></script>
+  <!-- Connects to the shared server. type="module" runs it after app.js -->
+  <script type="module" src="sync.js"></script>
+</body>
+</html>
