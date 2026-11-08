@@ -27,9 +27,9 @@ const pubs = [
 // Add or remove as many as you like: the wheel redraws itself to fit.
 const punishments = [
   { label: "Down your pint 🍺", detail: "Down your pint!",                  weight: 4 },
-  { label: "Buy them a pint",   detail: "Buy a pint for whoever caught you", weight: 1 },
+  { label: "Buy them a pint 🍻", detail: "Buy a pint for whoever caught you", weight: 1 },
   { label: "Shot 🥃",           detail: "Take a shot!",                      weight: 1 },
-  { label: "Stranger selfie",   detail: "Get a selfie with a stranger",      weight: 1 },
+  { label: "Stranger selfie 🤳", detail: "Get a selfie with a stranger",      weight: 1 },
   { label: "Scot free 🎁",      detail: "Scot free! No punishment this time", weight: 1, noPenalty: true },
 ];
 
@@ -154,6 +154,10 @@ const mapOpenLink = document.getElementById("map-open-link");
 const tabButtons = document.querySelectorAll(".tab-button");
 const tabPanels = document.querySelectorAll(".tab-panel");
 
+// The sliding highlight is one tab wide, however many tabs there are
+const tabIndicator = document.querySelector(".tab-indicator");
+tabIndicator.style.width = "calc((100% - 12px) / " + tabButtons.length + ")";
+
 // ===== TABS =====
 // Which tab is showing. Remembered so a refresh keeps you on the same tab.
 let activeTab = localStorage.getItem("activeTab") || "pub";
@@ -169,8 +173,12 @@ function showTab(name) {
   });
 
   // Highlight the matching button in the tab bar
-  tabButtons.forEach(function (button) {
-    button.classList.toggle("active", button.dataset.tab === name);
+  tabButtons.forEach(function (button, index) {
+    const isActive = button.dataset.tab === name;
+    button.classList.toggle("active", isActive);
+    // Slide the glossy highlight across to this tab. translateX(100%)
+    // moves it by its own width, i.e. exactly one tab along.
+    if (isActive) tabIndicator.style.transform = "translateX(" + index * 100 + "%)";
   });
 
   if (name === "map") updateMap();
@@ -316,42 +324,120 @@ punishments.forEach(function (p) {
   angleSoFar = angleSoFar + size;
 });
 
-// Room for a label, in pixels: from the rim to the cap in the middle.
-// = half the wheel (150) - gold rim (6) - gap at rim (16) - gap for cap (30)
-const WHEEL_SIZE = 300;   // must match .wheel-wrap width in style.css
-const LABEL_SPACE = WHEEL_SIZE / 2 - 6 - 16 - 30;
+// ----- Wheel measurements (must match style.css) -----
+const WHEEL_SIZE = 300;   // .wheel-wrap width
+const RIM = 14;           // .wheel inset (12px) + its border (2px)
+const HUB_RADIUS = 34;    // half the SPIN button's width (68px)
+const WHEEL_RADIUS = WHEEL_SIZE / 2 - RIM;   // the coloured part: 136px
+
+// Slice colours. Each has a matching text colour that's easy to read on it.
+const sliceStyles = [
+  { bg: "#c8102e", text: "#ffffff" },   // red
+  { bg: "#1f7a4d", text: "#ffffff" },   // green
+  { bg: "#f2c14e", text: "#4a2f00" },   // gold
+  { bg: "#fdf6e3", text: "#0f3d2e" },   // cream
+  { bg: "#0f5c3a", text: "#ffffff" },   // deep green
+  { bg: "#8e0c21", text: "#ffffff" },   // dark red
+];
+
+const hubButton = document.getElementById("hub-button");
+let wheelHighlight;   // the dimming layer, made in buildWheel
+
+// Splits a label into two lines if it's long, e.g.
+// "Stranger selfie" -> ["Stranger", "selfie"]. Two shorter lines can use
+// a much bigger font than one long line.
+function splitLabel(text) {
+  if (text.length <= 9 || !text.includes(" ")) return [text];
+  // Find the space nearest the middle
+  const middle = text.length / 2;
+  let best = -1;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === " " && (best === -1 || Math.abs(i - middle) < Math.abs(best - middle))) {
+      best = i;
+    }
+  }
+  return [text.slice(0, best), text.slice(best + 1)];
+}
 
 // Draw the wheel once when the page loads.
 function buildWheel() {
   // Colour the slices. A "conic-gradient" is a colour sweep around a
   // centre point, like a pie chart. We list each slice's colour and where
-  // it starts and ends. Each slice starts with a thin gold line so the
+  // it starts and ends. Each slice starts with a thin white line so the
   // slices are clearly separated.
-  const colours = ["#c8102e", "#1b5e46", "#8e0c21", "#0f3d2e"];  // reds and greens
   const slices = sliceAngles.map(function (a, i) {
-    const colour = colours[i % colours.length];
-    const lineEnd = a.start + 0.8;   // the gold line is 0.8 degrees wide
-    return "#f2c14e " + a.start + "deg " + lineEnd + "deg, " +
-           colour + " " + lineEnd + "deg " + a.end + "deg";
+    const style = sliceStyles[i % sliceStyles.length];
+    const lineEnd = a.start + 0.6;   // the white line is 0.6 degrees wide
+    return "rgba(255,255,255,0.85) " + a.start + "deg " + lineEnd + "deg, " +
+           style.bg + " " + lineEnd + "deg " + a.end + "deg";
   });
   wheel.style.background = "conic-gradient(" + slices.join(", ") + ")";
 
-  // Add a label for each slice, turned to point at the middle of its slice
+  // Add a label for each slice
   punishments.forEach(function (p, i) {
+    const style = sliceStyles[i % sliceStyles.length];
     const middle = (sliceAngles[i].start + sliceAngles[i].end) / 2;
+
+    // Pull the emoji (if any) out of the label, so it can sit at the rim.
+    // \p{Extended_Pictographic} means "any emoji character".
+    const emojiMatch = p.label.match(/\p{Extended_Pictographic}/u);
+    const emoji = emojiMatch ? emojiMatch[0] : "";
+    const words = p.label.replace(/\p{Extended_Pictographic}️?/gu, "").trim();
+    const lines = splitLabel(words);
+
     const label = document.createElement("div");
     label.className = "wheel-label";
-    label.style.transform = "rotate(" + middle + "deg)";
+    // The strip starts pointing right (3 o'clock). Turning it by
+    // (middle - 90) points it at the middle of its slice.
+    label.style.transform = "rotate(" + (middle - 90) + "deg)";
+
     const text = document.createElement("span");
-    text.textContent = p.label;
-    // Shrink long labels so they fit between the rim and the cap.
-    // Each letter is roughly 0.6 x the font size wide.
-    const letters = Array.from(p.label).length;   // Array.from counts an emoji as 1
-    text.style.fontSize = Math.min(13, LABEL_SPACE / (letters * 0.6)) + "px";
+    text.className = "label-text";
+    text.style.color = style.text;
+    // Dark text on light slices doesn't need a shadow; white text does
+    if (style.text === "#ffffff") text.style.textShadow = "0 1px 2px rgba(0,0,0,0.5)";
+    lines.forEach(function (line, n) {
+      if (n > 0) text.appendChild(document.createElement("br"));
+      text.appendChild(document.createTextNode(line));
+    });
+
+    // Font size: as big as fits between the SPIN button and the rim,
+    // but never bigger than 16px. Letters are about 0.58 x the font size wide.
+    const space = WHEEL_RADIUS - HUB_RADIUS - 14 - (emoji ? 24 : 0);
+    const longest = Math.max.apply(null, lines.map(function (l) { return l.length; }));
+    text.style.fontSize = Math.min(16, space / (longest * 0.58)) + "px";
+
     label.appendChild(text);
+    if (emoji) {
+      const icon = document.createElement("span");
+      icon.className = "label-emoji";
+      icon.textContent = emoji;
+      label.appendChild(icon);
+    }
     wheel.appendChild(label);
   });
+
+  // The layer that dims the losing slices after a spin
+  wheelHighlight = document.createElement("div");
+  wheelHighlight.className = "wheel-highlight";
+  wheel.appendChild(wheelHighlight);
 }
+
+// Dim every slice except the winner, so it's obvious where it landed
+function highlightSlice(i) {
+  const a = sliceAngles[i];
+  const dim = "rgba(0,0,0,0.55)";
+  wheelHighlight.style.background = "conic-gradient(" +
+    dim + " 0deg " + a.start + "deg, " +
+    "transparent " + a.start + "deg " + a.end + "deg, " +
+    dim + " " + a.end + "deg 360deg)";
+  wheelHighlight.classList.add("show");
+}
+
+// Tapping SPIN in the middle does the same as the big button
+hubButton.addEventListener("click", function () {
+  spinButton.click();
+});
 
 // ----- More elements for the wheel, crew and pop-up -----
 const wheelWrap = document.getElementById("wheel-wrap");
@@ -515,6 +601,7 @@ function updateSpinButton() {
     spinButton.disabled = false;
     spinButton.textContent = "Spin for " + people[selectedPerson].name + " 🎡";
   }
+  hubButton.disabled = spinButton.disabled;   // the SPIN hub matches the big button
 }
 
 // ----- Spinning -----
@@ -526,9 +613,11 @@ spinButton.addEventListener("click", function () {
   unlockAudio();
   spinning = true;
   spinButton.disabled = true;
+  hubButton.disabled = true;
   spinButton.textContent = "Spinning…";
   spinResult.textContent = "";
   wheelWrap.classList.add("spinning");   // makes the lights blink fast
+  wheelHighlight.classList.remove("show");   // un-dim last spin's result
 
   // 1. Pick a random spot on the wheel (0 to 360 degrees). Bigger slices
   //    cover more of the circle, so they're more likely to be picked.
@@ -560,9 +649,18 @@ spinButton.addEventListener("click", function () {
   function frame(now) {
     // t goes from 0 (start) to 1 (finished)
     const t = Math.min((now - startTime) / duration, 1);
-    // "Ease out": fast at first, then slows right down, like a real wheel
-    const eased = 1 - Math.pow(1 - t, 4);
-    wheelRotation = startRotation + (endRotation - startRotation) * eased;
+    const WIND_UP = 0.07;   // the first 7% of the spin is a little pull-back
+    const PULL_BACK = 12;   // degrees
+    if (t < WIND_UP && !reduceMotion) {
+      // Wind-up: ease backwards a touch, like a hand grabbing the wheel
+      wheelRotation = startRotation - PULL_BACK * Math.sin((t / WIND_UP) * Math.PI / 2);
+    } else {
+      // Then let go. "Ease out": fast at first, then slows right down
+      const t2 = reduceMotion ? t : (t - WIND_UP) / (1 - WIND_UP);
+      const eased = 1 - Math.pow(1 - t2, 4);
+      const from = reduceMotion ? startRotation : startRotation - PULL_BACK;
+      wheelRotation = from + (endRotation - from) * eased;
+    }
     wheel.style.transform = "rotate(" + wheelRotation + "deg)";
 
     // Has a peg gone past the pointer since the last frame? Tick!
@@ -617,9 +715,15 @@ function finishSpin(winner) {
   }
 
   spinResult.textContent = "🎯 " + person.name + ": " + punishment.detail;
-  showResult(person, punishment);
-  fanfare();
+
+  // Light up the winning slice, and give everyone a moment to see it
+  // before the pop-up appears
+  highlightSlice(winner);
   if (navigator.vibrate) navigator.vibrate(200);
+  setTimeout(function () {
+    showResult(person, punishment);
+    fanfare();
+  }, 800);
 
   // Ready for the next one
   selectedPerson = null;

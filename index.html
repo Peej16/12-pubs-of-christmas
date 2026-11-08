@@ -114,15 +114,31 @@
       <p class="hint">Who got caught?</p>
       <div id="picker" class="picker"></div>
 
+      <!-- The wrap itself is drawn as the shiny gold rim -->
       <div id="wheel-wrap" class="wheel-wrap">
-        <!-- The pointer is a little triangle that sits above the wheel -->
-        <div class="wheel-pointer"></div>
+        <!-- The pointer: a red-and-gold pin drawn with SVG (a way of
+             drawing shapes with code). The tip points down at the wheel. -->
+        <div class="wheel-pointer">
+          <svg viewBox="0 0 40 52" width="40" height="52" aria-hidden="true">
+            <defs>
+              <linearGradient id="pin-red" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#ff5a70"/>
+                <stop offset="1" stop-color="#a00c25"/>
+              </linearGradient>
+            </defs>
+            <path d="M20 50 L5 20 A16 16 0 1 1 35 20 Z" fill="url(#pin-red)" stroke="#f2c14e" stroke-width="2.5" stroke-linejoin="round"/>
+            <circle cx="20" cy="17" r="6" fill="#f2c14e" stroke="#fff3c4" stroke-width="1.5"/>
+            <ellipse cx="14" cy="10" rx="5" ry="3" fill="rgba(255,255,255,0.45)"/>
+          </svg>
+        </div>
         <!-- JavaScript colours the wheel and adds the labels -->
         <div id="wheel" class="wheel"></div>
-        <!-- Ring of little lights around the edge (added by JavaScript) -->
+        <!-- A shine that stays still while the wheel spins under it -->
+        <div class="wheel-gloss"></div>
+        <!-- Ring of little lights around the rim (added by JavaScript) -->
         <div id="wheel-lights" class="wheel-lights"></div>
-        <!-- The cap in the middle of the wheel -->
-        <div class="wheel-hub">🎄</div>
+        <!-- The button in the middle: tap it to spin -->
+        <button id="hub-button" class="wheel-hub" aria-label="Spin the wheel">SPIN</button>
       </div>
 
       <button id="spin-button" class="big-button spin-button">👆 Pick who got caught</button>
@@ -155,6 +171,8 @@
   <!-- ===== TAB BAR (stuck to the bottom of the screen) =====
        data-tab="..." says which section each button opens -->
   <nav class="tab-bar">
+    <!-- The glossy highlight that slides behind whichever tab is active -->
+    <span class="tab-indicator" aria-hidden="true"></span>
     <button class="tab-button" data-tab="pub">🍺<span>Pub</span></button>
     <button class="tab-button" data-tab="map">🗺️<span>Map</span></button>
     <button class="tab-button" data-tab="punish">🎡<span>Punish</span></button>

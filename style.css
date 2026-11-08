@@ -369,26 +369,38 @@ main {
   margin-bottom: 24px;
 }
 
+/* The wrap is drawn as a thick, shiny gold rim. A "conic" gradient that
+   goes light-dark-light round the circle looks like polished metal. */
 .wheel-wrap {
   position: relative;
   width: 300px;   /* if you change this, change WHEEL_SIZE in app.js too */
   max-width: 100%;
   aspect-ratio: 1;   /* always a perfect square, so the wheel stays round */
-  margin: 0 auto 16px;
+  margin: 24px auto 20px;   /* room above for the pointer */
+  border-radius: 50%;
+  background: conic-gradient(#fff3c4, #c9932a, #ffe7a3, #a87420, #fff3c4, #c9932a, #ffe7a3, #a87420, #fff3c4);
+  box-shadow:
+    inset 0 2px 2px rgba(255, 255, 255, 0.6),   /* light on the top edge */
+    inset 0 -4px 8px rgba(0, 0, 0, 0.35),       /* shade on the bottom edge */
+    0 16px 30px rgba(0, 0, 0, 0.55),            /* shadow under the wheel */
+    0 0 40px rgba(242, 193, 78, 0.25);          /* warm glow around it */
 }
 
-/* The triangle at the top, made from borders (a classic CSS trick) */
+/* The pointer pin, sitting on top of the rim with its tip in the wheel */
 .wheel-pointer {
   position: absolute;
-  top: -10px;
+  top: -20px;
   left: 50%;
-  margin-left: -14px;
-  border-left: 14px solid transparent;
-  border-right: 14px solid transparent;
-  border-top: 30px solid var(--cream);
-  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5));
-  transform-origin: 50% 0;   /* flicks from its top, like it's on a hinge */
+  width: 40px;
+  height: 52px;
+  margin-left: -20px;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.5));
+  transform-origin: 50% 30%;   /* flicks from the round head, like it's on a pin */
   z-index: 4;   /* sit on top of everything */
+}
+
+.wheel-pointer svg {
+  display: block;
 }
 
 /* Each time a peg passes, JavaScript adds "tick" and the pointer flicks */
@@ -402,25 +414,44 @@ main {
   100% { transform: rotate(0deg); }
 }
 
+/* The spinning part sits inside the rim (12px in from the edge) */
 .wheel {
-  position: relative;
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  inset: 12px;   /* if you change this, change RIM in app.js too */
   border-radius: 50%;
-  border: 6px solid var(--gold);
+  border: 2px solid #7a5a12;   /* thin dark line where the slices meet the rim */
   overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.25);
+  z-index: 1;
   will-change: transform;   /* hint to the browser: this spins, keep it smooth */
 }
 
-/* A soft dark edge on top of the slices, so the wheel looks less flat */
-.wheel::after {
-  content: "";
+/* After a spin, everything except the winning slice is dimmed.
+   It's inside .wheel, so it turns with the slices. */
+.wheel-highlight {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: radial-gradient(circle, transparent 55%, rgba(0, 0, 0, 0.3));
+  opacity: 0;
+  transition: opacity 0.4s;
   pointer-events: none;
+}
+
+.wheel-highlight.show {
+  opacity: 1;
+}
+
+/* Light reflections that DON'T spin. Real shiny wheels look like this:
+   the slices move, but the shine from the room lights stays put. */
+.wheel-gloss {
+  position: absolute;
+  inset: 12px;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse at 35% 18%, rgba(255, 255, 255, 0.35), transparent 42%),
+    radial-gradient(circle, transparent 62%, rgba(0, 0, 0, 0.35) 100%);
+  pointer-events: none;
+  z-index: 2;
 }
 
 /* The ring of lights sits over the gold rim */
@@ -440,7 +471,7 @@ main {
 
 .light {
   position: absolute;
-  top: 3px;    /* the middle of the 6px gold rim */
+  top: 6px;    /* the middle of the 12px gold rim */
   left: 50%;
   width: 8px;
   height: 8px;
@@ -469,23 +500,55 @@ main {
   to   { opacity: 0.25; }
 }
 
-/* The cap in the middle */
+/* The SPIN button in the middle: a shiny red dome with a gold rim */
 .wheel-hub {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 48px;
-  height: 48px;
+  width: 68px;    /* if you change this, change HUB_RADIUS in app.js too */
+  height: 68px;
   transform: translate(-50%, -50%);   /* centre it exactly */
   border-radius: 50%;
-  background: var(--cream);
-  border: 4px solid var(--gold);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.4rem;
+  border: 3px solid var(--gold);
+  /* A radial gradient with its bright spot top-left looks like a dome */
+  background: radial-gradient(circle at 35% 30%, #ff6b80, #c8102e 55%, #7a0717);
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -4px 6px rgba(0, 0, 0, 0.35),
+    0 4px 12px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
   z-index: 3;
+}
+
+.wheel-hub:active {
+  transform: translate(-50%, -50%) scale(0.92);
+}
+
+/* Greyed out until someone's picked (or while it's spinning) */
+.wheel-hub:disabled {
+  background: radial-gradient(circle at 35% 30%, #c3cdc8, #8a9a92 55%, #56625c);
+  cursor: default;
+}
+
+/* Gently pulses when it's ready to tap */
+.wheel-hub:not(:disabled) {
+  animation: hub-pulse 1.4s infinite alternate;
+}
+
+@keyframes hub-pulse {
+  from {
+    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.5), inset 0 -4px 6px rgba(0, 0, 0, 0.35),
+                0 4px 12px rgba(0, 0, 0, 0.5), 0 0 0 0 rgba(242, 193, 78, 0.6);
+  }
+  to {
+    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.5), inset 0 -4px 6px rgba(0, 0, 0, 0.35),
+                0 4px 12px rgba(0, 0, 0, 0.5), 0 0 0 8px rgba(242, 193, 78, 0);
+  }
 }
 
 /* The Spin button glows when it's ready to press */
@@ -722,30 +785,35 @@ main {
   to { transform: translateY(110vh) rotate(540deg); }
 }
 
-/* Each label is a thin strip from the edge to the centre, turned to
-   point at its slice. The text runs down the strip. */
+/* Each label is a strip running from the centre out to the rim, turned
+   to point along the middle of its slice. The text reads outwards, with
+   the emoji at the rim end. (Like the big online "wheel of names" sites.) */
 .wheel-label {
   position: absolute;
-  top: 0;
+  top: 50%;
   left: 50%;
-  width: 2em;
-  margin-left: -1em;
-  height: 50%;
-  padding-top: 16px;     /* keeps text clear of the lights on the rim */
-  padding-bottom: 30px;  /* ...and clear of the cap in the middle */
-  overflow: hidden;      /* never let text run under the cap */
-  transform-origin: bottom center;   /* spin around the wheel's centre */
+  width: calc(50% - 8px);    /* centre to just inside the rim */
+  height: 80px;
+  margin-top: -40px;         /* centre the strip on its line */
+  padding-left: 40px;        /* keeps text clear of the SPIN button */
+  transform-origin: 0 50%;   /* turn around the wheel's centre */
   display: flex;
-  justify-content: center;
+  align-items: center;
+  justify-content: flex-end; /* push the text out towards the rim */
+  gap: 3px;
+  pointer-events: none;
 }
 
-.wheel-label span {
-  writing-mode: vertical-rl;
-  white-space: nowrap;
-  /* font-size is set by app.js, so long labels shrink to fit */
-  font-weight: bold;
-  color: white;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+.label-text {
+  text-align: right;
+  font-weight: 800;
+  line-height: 1.05;
+  /* font-size and colour are set by app.js for each slice */
+}
+
+.label-emoji {
+  font-size: 20px;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.4));
 }
 
 .spin-result {
@@ -858,4 +926,386 @@ h3 {
 /* data-state="..." is set by setStatus() in app.js */
 .sync-status[data-state="live"] {
   background: var(--green);
+}
+
+
+/* =====================================================================
+   ✨ GLOSSY LOOK ✨
+   Everything below sits ON TOP of the styles above. CSS uses the LAST
+   rule it reads, so these win. Delete a block here and that part goes
+   back to the plain look.
+
+   Three tricks do most of the work:
+   1. Gradients instead of flat colours (light at the top, darker below,
+      like light falling on a shiny object).
+   2. "inset" shadows: a thin bright line inside the top edge looks like
+      light catching the rim of glass.
+   3. Stacked shadows: a tight dark one + a big soft one = floating.
+   ===================================================================== */
+
+:root {
+  /* Frosted glass */
+  --glass: linear-gradient(160deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04));
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --edge-shine: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  --float: 0 2px 4px rgba(0, 0, 0, 0.25), 0 12px 32px rgba(0, 0, 0, 0.35);
+
+  /* Gold that looks like foil, not flat yellow */
+  --gold-metal: linear-gradient(180deg, #ffe7a3 0%, #f2c14e 45%, #c9932a 100%);
+}
+
+/* ----- Background: deep green with soft "fairy light" glows ----- */
+/* A fixed layer behind everything (works on iPhones, unlike
+   background-attachment: fixed) */
+body {
+  background: #0b2e22;
+  padding-bottom: 110px;   /* room for the floating tab bar */
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 12% 8%,  rgba(242, 193, 78, 0.16), transparent 35%),
+    radial-gradient(circle at 90% 25%, rgba(200, 16, 46, 0.22),  transparent 40%),
+    radial-gradient(circle at 20% 70%, rgba(242, 193, 78, 0.08), transparent 30%),
+    radial-gradient(circle at 50% 110%, rgba(46, 125, 90, 0.55), transparent 60%),
+    linear-gradient(180deg, #0b2e22 0%, #0f3d2e 45%, #082419 100%);
+}
+
+/* ----- Header: glossy red with a shine across the top half ----- */
+header {
+  background: linear-gradient(180deg, #e3253f 0%, #c8102e 55%, #9e0c24 100%);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid rgba(242, 193, 78, 0.5);
+}
+
+header::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 55% 0;   /* top 45% of the header */
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+
+h1 {
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+h3 {
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+/* ----- Progress bar: sunken track, shiny gold fill ----- */
+.progress-bar {
+  height: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+}
+
+#progress-fill {
+  background: var(--gold-metal);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 0 10px rgba(242, 193, 78, 0.6);
+  border-radius: 999px;
+}
+
+.sync-status {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: var(--edge-shine);
+}
+
+/* ----- Frosted glass cards -----
+   backdrop-filter blurs whatever is BEHIND the card, like frosted glass */
+.current-card,
+.crew-card,
+#pub-list li {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);   /* Safari / iPhone */
+  backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--edge-shine), var(--float);
+}
+
+.current-card {
+  border-radius: 24px;
+  border-color: rgba(242, 193, 78, 0.45);   /* a hint of gold on the main card */
+}
+
+.crew-card {
+  border-radius: 18px;
+}
+
+#pub-list li {
+  border-radius: 14px;
+  margin-bottom: 8px;
+}
+
+/* The pub you're in: shiny gold instead of flat yellow */
+#pub-list li.current {
+  background: var(--gold-metal);
+  border-color: #ffe7a3;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 0 18px rgba(242, 193, 78, 0.45), var(--float);
+}
+
+/* Top of the hall of shame: glossy red with a gold rim */
+.crew-card.leader {
+  background: linear-gradient(160deg, #e3253f, #8e0c21);
+  border: 1px solid var(--gold);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 0 20px rgba(200, 16, 46, 0.45), var(--float);
+}
+
+/* ----- Timer: a sunken glass window ----- */
+.timer {
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  box-shadow: inset 0 3px 10px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.timer-display {
+  text-shadow: 0 0 18px rgba(253, 246, 227, 0.35);   /* soft glow on the numbers */
+}
+
+.timer.times-up {
+  background: linear-gradient(180deg, #e3253f, #9e0c24);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 0 24px rgba(200, 16, 46, 0.6);
+}
+
+/* ----- Rule card: add a glossy shine to both faces ----- */
+.rule-front,
+.rule-back {
+  border-radius: 18px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 8px 20px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.rule-front::after,
+.rule-back::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 50% 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+
+/* ----- Big buttons: glossy "candy" style -----
+   A gradient body, a shiny band across the top (::before), and a darker
+   "lip" underneath (the 0 5px 0 shadow) so it looks like it sticks up. */
+.big-button {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;   /* keeps the shine layers inside the button */
+  border-radius: 18px;
+  background: linear-gradient(180deg, #f0405a 0%, #c8102e 50%, #a00c25 100%);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.2),
+    0 5px 0 #6e0818,
+    0 12px 22px rgba(0, 0, 0, 0.35);
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+
+/* The shiny band on the top half */
+.big-button::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 6px;
+  right: 6px;
+  height: 45%;
+  border-radius: 14px 14px 50% 50% / 14px 14px 30% 30%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.04));
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Pressed: the button sinks down onto its lip */
+.big-button:active {
+  transform: translateY(4px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.2),
+    0 1px 0 #6e0818,
+    0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.big-button:disabled {
+  background: linear-gradient(180deg, #a3b0a9, #7b8a83);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 5px 0 #56625c, 0 10px 18px rgba(0, 0, 0, 0.3);
+  cursor: default;
+}
+
+/* A streak of light that sweeps across the important buttons */
+#next-button::after,
+.spin-button:not(:disabled)::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -60%;
+  width: 40%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  transform: skewX(-20deg);
+  animation: shimmer 4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+#next-button:disabled::after {
+  display: none;
+}
+
+@keyframes shimmer {
+  0%, 70% { left: -60%; }   /* wait most of the time... */
+  100%    { left: 130%; }   /* ...then sweep across */
+}
+
+/* The Spin button's glow, redone so it keeps the candy shadows too */
+@keyframes glow {
+  from {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -3px 0 rgba(0, 0, 0, 0.2),
+                0 5px 0 #6e0818, 0 12px 22px rgba(0, 0, 0, 0.35);
+  }
+  to {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -3px 0 rgba(0, 0, 0, 0.2),
+                0 5px 0 #6e0818, 0 0 26px rgba(242, 193, 78, 0.85);
+  }
+}
+
+/* ----- Small buttons: glass pills ----- */
+.small-button,
+.icon-button {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: var(--edge-shine), 0 4px 12px rgba(0, 0, 0, 0.2);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.small-button {
+  border-radius: 999px;
+  padding: 8px 16px;
+}
+
+.small-button:active,
+.icon-button:active {
+  transform: scale(0.96);
+}
+
+/* ----- Gold outline buttons (Directions, map modes) ----- */
+.map-button,
+.mode-button {
+  background: rgba(242, 193, 78, 0.08);
+  border: 1px solid rgba(242, 193, 78, 0.7);
+  border-radius: 999px;
+  box-shadow: inset 0 1px 0 rgba(255, 231, 163, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.map-button:active,
+.mode-button:active {
+  transform: scale(0.98);
+}
+
+.mode-button.active {
+  background: var(--gold-metal);
+  border-color: #ffe7a3;
+  color: var(--green);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 0 14px rgba(242, 193, 78, 0.4);
+}
+
+.map-frame {
+  border-radius: 20px;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--float);
+}
+
+/* ----- Avatars: a little lift ----- */
+.avatar {
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* ----- Result pop-up: blur the app behind it, glossy card ----- */
+.overlay {
+  background: rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.result-card {
+  background: linear-gradient(180deg, #fffdf6, #f6ecd2);
+  border: 2px solid var(--gold);
+  border-radius: 26px;
+  box-shadow: inset 0 1px 0 white, 0 0 40px rgba(242, 193, 78, 0.35), 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+/* ----- Floating tab bar -----
+   A rounded "pill" hovering above the bottom of the screen, with a
+   glossy highlight (.tab-indicator) that slides to the active tab. */
+.tab-bar {
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom));   /* clear the iPhone home bar */
+  max-width: 456px;
+  margin: 0 auto;           /* centred on wide screens */
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(110, 8, 24, 0.72);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: var(--edge-shine), 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.tab-button {
+  position: relative;
+  z-index: 1;   /* in front of the sliding highlight */
+  padding: 6px 0;
+  border-radius: 999px;
+  transition: opacity 0.2s;
+}
+
+.tab-button.active {
+  background: none;   /* the sliding highlight does this job now */
+}
+
+.tab-indicator {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 6px;
+  /* width is set by app.js: one tab wide */
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.08));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 2px 8px rgba(0, 0, 0, 0.25);
+  /* A springy slide: the cubic-bezier overshoots slightly, then settles */
+  transition: transform 0.35s cubic-bezier(0.3, 1.35, 0.5, 1);
+}
+
+/* A little glowing gold dot under the active tab */
+.tab-indicator::after {
+  content: "";
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  margin-left: -2.5px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 6px 1px var(--gold);
+}
+
+/* ----- People who turn off animations get a still version ----- */
+@media (prefers-reduced-motion: reduce) {
+  #next-button::after,
+  .spin-button:not(:disabled)::after {
+    display: none;
+  }
+  .tab-indicator {
+    transition: none;
+  }
 }
