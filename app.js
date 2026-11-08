@@ -30,6 +30,7 @@ const punishments = [
   { label: "Buy them a pint 🍻", detail: "Buy a pint for whoever caught you", weight: 1 },
   { label: "Shot 🥃",           detail: "Take a shot!",                      weight: 1 },
   { label: "Stranger selfie 🤳", detail: "Get a selfie with a stranger",      weight: 1 },
+    { label: "Mystery", detail: "A group member of your choosing has to give you a dare",      weight: .5 },
   { label: "Scot free 🎁",      detail: "Scot free! No punishment this time", weight: 1, noPenalty: true },
 ];
 
